@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Newtonsoft.Json;
+using System.Net;
+using System.Net.Http;
+using System.Windows;
+
+
+
+namespace Weatherforcastingapp
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+        String APIKEY = "3dbbe43159d4110e4436d3525f1fd5ea";
+        string BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
+
+        private void btn_search_Click(object sender, EventArgs e)
+        {
+            getWeather();
+        }
+
+        private async void getWeather()
+        {
+            String cityName = TbCity.Text;
+
+            string weatherUrl = $"{BASE_URL}?q={cityName}&appid={APIKEY}";
+
+            using (HttpClient client = new HttpClient())
+            {
+
+                using (HttpResponseMessage response = await client.GetAsync(weatherUrl))
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string weatherData = await response.Content.ReadAsStringAsync();
+                        weatherInfo.root Info= JsonConvert.DeserializeObject<weatherInfo.root>(weatherData);
+
+                        pk_icon.ImageLocation = "https://openweathermap.org/img/w/" + Info.weather[0].icon + ".png";
+                        lab_condition.Text = Info.weather[0].main;
+                        lab_detail.Text = Info.weather[0].description;
+                        lab_sunset.Text = convertDateTime(Info.sys.sunset).ToString();
+                        lab_sunrise.Text = convertDateTime(Info.sys.sunrise).ToString();
+                        lab_windspeed.Text = Info.wind.speed.ToString();
+                        lab_pressure.Text = Info.main.pressure.ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Error retrieving weather data.");
+                    }
+                }
+            }
+            
+        }
+        DateTime convertDateTime(long millisec)
+        {
+            DateTime day = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            day = day.AddSeconds(millisec).ToLocalTime();
+            return day;
+        }
+    }
+}
